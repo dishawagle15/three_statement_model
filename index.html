@@ -175,6 +175,8 @@
       ppe: 683102,
       debt: 347530,
       equity: 1009626,
+      shareCapital: 6766,
+      dividendPayout: 0.20,
       cash: 106502,
       ar: 42121,
       inv: 146062,
@@ -203,46 +205,71 @@
       let prevRevenue = hist.revenue;
       let prevPPE = hist.ppe;
       let prevDebt = hist.debt;
-      let prevEquity = hist.equity;
+      const shareCapital = hist.shareCapital;
+      let prevRetainedEarnings = hist.equity - shareCapital;
+      let prevEquity = shareCapital + prevRetainedEarnings;
       let prevCash = hist.cash;
-      let prevNWC = hist.ar + hist.inv - hist.ap;
+      // Keep opening BS internally balanced by plugging opening Other Liabilities
+      // against opening Other Assets implied by percentage assumption.
+      let prevOtherAssets = hist.revenue * hist.otherAssetsPct;
+      let prevOtherLiab =
+        hist.cash + hist.ar + hist.inv + hist.ppe + prevOtherAssets
+        - (hist.ap + hist.debt + prevEquity);
+
+      // Full operating NWC includes AR, Inventory, AP and other operating balances.
+      let prevNWC = hist.ar + hist.inv - hist.ap + prevOtherAssets - prevOtherLiab;
 
       for(let i=0;i<5;i++){
+        // ---------------- Income Statement ----------------
         const revenue = prevRevenue * (1 + cfg.growth[i]);
         const ebitda = revenue * cfg.margin[i];
         const opex = revenue * hist.opexPct[i];
         const cogs = revenue - opex - ebitda;
         const grossProfit = revenue - cogs;
 
+        // Interest is based on opening debt (prior-year closing debt) to avoid circularity.
         const dep = prevPPE * hist.depPct[i];
         const ebit = ebitda - dep;
         const interest = prevDebt * intRate;
         const ebt = ebit - interest;
         const taxAmt = Math.max(0, ebt * tax);
         const netIncome = ebt - taxAmt;
+        const dividends = Math.max(0, netIncome * hist.dividendPayout);
 
+        // ---------------- Working Capital Schedule ----------------
         const ar = revenue * arDays / 365;
         const inv = cogs * invDays / 365;
         const ap = cogs * apDays / 365;
-        const nwc = ar + inv - ap;
+        const otherAssets = revenue * hist.otherAssetsPct;
+        const otherLiab = revenue * hist.otherLiabPct;
+        const nwc = ar + inv - ap + otherAssets - otherLiab;
         const dNwc = nwc - prevNWC;
 
+        // ---------------- Cash Flow Statement ----------------
+        // CFO captures full operating working-capital movement.
         const cfo = netIncome + dep - dNwc;
         const capex = revenue * cfg.capex[i];
         const cfi = -capex;
 
-        const preFinancingCash = prevCash + cfo + cfi;
+        // Pre-debt cash includes dividend payout, so equity and cash stay linked.
+        const preDebtCash = prevCash + cfo + cfi - dividends;
         const minCash = revenue * minCashPct;
-        const debtChange = Math.max(0, minCash - preFinancingCash) - Math.min(prevDebt, Math.max(0, preFinancingCash - minCash));
+        // Debt sweep after operations/investing/dividends to hit minimum cash floor.
+        const debtChange =
+          Math.max(0, minCash - preDebtCash)
+          - Math.min(prevDebt, Math.max(0, preDebtCash - minCash));
         const debt = prevDebt + debtChange;
 
-        const netChangeCash = cfo + cfi + debtChange;
+        const cff = debtChange - dividends;
+        const netChangeCash = cfo + cfi + cff;
         const cash = prevCash + netChangeCash;
 
+        // ---------------- Balance Sheet ----------------
+        // Retained earnings roll-forward:
+        // Opening RE + Net Income - Dividends = Closing RE
+        const retainedEarnings = prevRetainedEarnings + netIncome - dividends;
+        const equity = shareCapital + retainedEarnings;
         const ppe = prevPPE + capex - dep;
-        const equity = prevEquity + netIncome;
-        const otherAssets = revenue * hist.otherAssetsPct;
-        const otherLiab = revenue * hist.otherLiabPct;
 
         const totalAssets = cash + ar + inv + ppe + otherAssets;
         const totalLiabEq = ap + debt + equity + otherLiab;
@@ -257,7 +284,8 @@
         out.push({
           revenue,cogs,grossProfit,opex,ebitda,dep,ebit,interest,taxAmt,netIncome,
           cash,ar,inv,ppe,totalAssets,ap,debt,equity,totalLiabEq,balanceCheck,
-          cfo,capex,debtChange,netChangeCash,
+          cfo,capex,dividends,debtChange,netChangeCash,
+          retainedEarnings,shareCapital,cff,
           roe,roce,ndToEbitda,fcf
         });
 
@@ -265,7 +293,10 @@
         prevPPE = ppe;
         prevDebt = debt;
         prevEquity = equity;
+        prevRetainedEarnings = retainedEarnings;
         prevCash = cash;
+        prevOtherAssets = otherAssets;
+        prevOtherLiab = otherLiab;
         prevNWC = nwc;
       }
 
