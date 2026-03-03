@@ -44,6 +44,15 @@ Current prefill: Reliance Industries Limited (consolidated) historicals for FY20
 - Net Debt / EBITDA
 - Free Cash Flow
 
+9. `DCF Valuation`
+- 5-year FCF build from projected statements
+- WACC and terminal growth inputs
+- Enterprise value, equity value, implied price per share
+
+Control panel also includes:
+- 2D sensitivity table (`Revenue Growth delta` vs `EBITDA Margin delta`)
+- Output metric: stressed FY2030 Net Debt / EBITDA
+
 ## How to run
 
 ```bash

@@ -241,9 +241,39 @@ def build_control_panel() -> Sheet:
     ws.set_str(15, 1, "Model checks", STYLE_BOLD)
     ws.set_str(16, 1, "Latest Balance Check (FY2030E)")
     ws.set_formula(16, 2, "='Projection Model'!F28", STYLE_CURRENCY)
+    ws.set_str(17, 1, "DCF Enterprise Value")
+    ws.set_formula(17, 2, "='DCF Valuation'!B21", STYLE_CURRENCY)
+    ws.set_str(18, 1, "DCF Equity Value")
+    ws.set_formula(18, 2, "='DCF Valuation'!B22", STYLE_CURRENCY)
+    ws.set_str(19, 1, "Implied Price / Share (INR)")
+    ws.set_formula(19, 2, "='DCF Valuation'!B23", STYLE_CURRENCY)
+
+    ws.set_str(21, 1, "2D Sensitivity: FY2030 Net Debt / EBITDA", STYLE_BOLD)
+    ws.set_str(22, 2, "Growth \\ Margin", STYLE_HEADER)
+    margin_deltas = [-0.02, -0.01, 0.00, 0.01, 0.02]
+    for i, d in enumerate(margin_deltas, start=3):
+        ws.set_num(22, i, d, STYLE_PCT)
+
+    growth_deltas = [-0.02, -0.01, 0.00, 0.01, 0.02]
+    for i, d in enumerate(growth_deltas, start=23):
+        ws.set_num(i, 2, d, STYLE_PCT)
+        for j in range(3, 8):
+            c = col_letter(j)
+            ws.set_formula(
+                i,
+                j,
+                (
+                    "=IFERROR((('Projection Model'!$F$25-'Projection Model'!$F$19)"
+                    f"/(('Projection Model'!$F$5*(1+$B{i}))*"
+                    f"(('Projection Model'!$F$9/'Projection Model'!$F$5)+{c}$22))),0)"
+                ),
+                STYLE_DEFAULT,
+            )
 
     ws.set_width(1, 42)
     ws.set_width(2, 18)
+    for c in [3, 4, 5, 6, 7]:
+        ws.set_width(c, 12)
     return ws
 
 
@@ -668,6 +698,75 @@ def build_ratio_dashboard() -> Sheet:
     return ws
 
 
+def build_dcf_valuation() -> Sheet:
+    ws = Sheet("DCF Valuation")
+    ws.set_str(1, 1, "DCF Valuation", STYLE_TITLE)
+
+    ws.set_str(3, 1, "Line Item", STYLE_HEADER)
+    for c, y in enumerate(YEARS_FCST, start=2):
+        ws.set_str(3, c, y, STYLE_HEADER)
+
+    rows = [
+        "Revenue",
+        "NOPAT (EBIT*(1-tax))",
+        "Depreciation",
+        "Capex",
+        "Change in NWC",
+        "Free Cash Flow",
+    ]
+    for r, label in enumerate(rows, start=4):
+        ws.set_str(r, 1, label)
+
+    for c in range(2, 7):
+        col = col_letter(c)
+        idx = c - 1
+        tax = global_lookup(26, idx)
+        ws.set_formula(4, c, f"='Projection Model'!{col}5", STYLE_CURRENCY)
+        ws.set_formula(5, c, f"='Projection Model'!{col}11*(1-{tax})", STYLE_CURRENCY)
+        ws.set_formula(6, c, f"='Projection Model'!{col}10", STYLE_CURRENCY)
+        ws.set_formula(7, c, f"=-'Projection Model'!{col}35", STYLE_CURRENCY)
+        ws.set_formula(8, c, f"='Projection Model'!{col}33", STYLE_CURRENCY)
+        ws.set_formula(9, c, f"={col}5+{col}6-{col}7-{col}8", STYLE_CURRENCY)
+
+    ws.set_str(11, 1, "WACC", STYLE_BOLD)
+    ws.set_num(11, 2, 0.11, STYLE_PCT)
+    ws.set_str(12, 1, "Terminal Growth", STYLE_BOLD)
+    ws.set_num(12, 2, 0.04, STYLE_PCT)
+    ws.set_str(13, 1, "Shares Outstanding (bn)", STYLE_BOLD)
+    ws.set_num(13, 2, 6.76, STYLE_DEFAULT)
+    ws.set_str(14, 1, "Net Debt (FY2030E)", STYLE_BOLD)
+    ws.set_formula(14, 2, "='Projection Model'!F25-'Projection Model'!F19", STYLE_CURRENCY)
+
+    ws.set_str(16, 1, "Discount Factor", STYLE_SECTION)
+    ws.set_str(17, 1, "PV of FCF", STYLE_SECTION)
+    for c in range(2, 7):
+        col = col_letter(c)
+        year_num = c - 1
+        ws.set_formula(16, c, f"=1/(1+$B$11)^{year_num}", STYLE_DEFAULT)
+        ws.set_formula(17, c, f"={col}9*{col}16", STYLE_CURRENCY)
+
+    ws.set_str(18, 1, "Terminal Value (at FY2030E)", STYLE_BOLD)
+    ws.set_formula(18, 6, "=F9*(1+$B$12)/($B$11-$B$12)", STYLE_CURRENCY)
+    ws.set_str(19, 1, "PV of Terminal Value", STYLE_BOLD)
+    ws.set_formula(19, 6, "=F18*F16", STYLE_CURRENCY)
+
+    ws.set_str(21, 1, "Enterprise Value", STYLE_SECTION)
+    ws.set_formula(21, 2, "=SUM(B17:F17)+F19", STYLE_CURRENCY)
+    ws.set_str(22, 1, "Equity Value", STYLE_SECTION)
+    ws.set_formula(22, 2, "=B21-B14", STYLE_CURRENCY)
+    ws.set_str(23, 1, "Implied Price per Share (INR)", STYLE_SECTION)
+    ws.set_formula(23, 2, "=B22/B13", STYLE_CURRENCY)
+
+    ws.set_str(25, 1, "Check", STYLE_BOLD)
+    ws.set_str(26, 1, "WACC > Terminal Growth?", STYLE_BOLD)
+    ws.set_formula(26, 2, '=IF(B11>B12,"OK","Fix Inputs")', STYLE_DEFAULT)
+
+    ws.set_width(1, 34)
+    for c in [2, 3, 4, 5, 6]:
+        ws.set_width(c, 13)
+    return ws
+
+
 def write_workbook(path: Path, sheets: List[Sheet]) -> None:
     with ZipFile(path, "w", ZIP_DEFLATED) as zf:
         zf.writestr("[Content_Types].xml", content_types_xml(len(sheets)))
@@ -689,6 +788,7 @@ def main() -> None:
         build_debt_schedule(),
         build_projection_model(),
         build_ratio_dashboard(),
+        build_dcf_valuation(),
     ]
     out = Path(OUTPUT_FILE)
     write_workbook(out, sheets)
