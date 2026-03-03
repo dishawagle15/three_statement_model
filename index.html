@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three Statement Model UI</title>
+  <style>
+    :root {
+      --bg: #f2f6fb;
+      --panel: #ffffff;
+      --ink: #0e1c2f;
+      --muted: #5a6b83;
+      --line: #d8e0ec;
+      --brand: #0b5fff;
+      --brand-2: #2f80ff;
+      --good: #0a8f5a;
+      --bad: #c23b3b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(135deg, #eef2f3, #d9e2ec);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 16px 28px;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 14px 30px rgba(14, 28, 47, 0.08);
+    }
+    .controls { padding: 14px; position: sticky; top: 16px; height: fit-content; }
+    h1 { font-size: 21px; margin: 0 0 6px; letter-spacing: 0.1px; }
+    .sub { color: var(--muted); margin: 0 0 14px; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    select, input {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+      font-size: 14px; background: #fff;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    select:focus, input:focus {
+      outline: 0;
+      border-color: #86b2ff;
+      box-shadow: 0 0 0 3px rgba(11, 95, 255, 0.12);
+    }
+    .group { margin-bottom: 10px; }
+    .btns { display: flex; gap: 8px; margin-top: 8px; }
+    button {
+      border: 0; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+      color: #fff; font-weight: 600;
+      box-shadow: 0 8px 18px rgba(11, 95, 255, 0.22);
+      transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(11, 95, 255, 0.28);
+      filter: saturate(1.05);
+    }
+    button.secondary { background: #dfe7f5; color: #183257; }
+    button.secondary:hover { box-shadow: 0 8px 16px rgba(24, 50, 87, 0.14); }
+    .main { display: grid; gap: 12px; }
+    .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    .kpi { padding: 10px; }
+    .kpi .t { font-size: 12px; color: var(--muted); }
+    .kpi .v { font-size: 18px; font-weight: 700; margin-top: 6px; letter-spacing: .15px; }
+    .v.good { color: var(--good); }
+    .v.bad { color: var(--bad); }
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; font-size: 13px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; min-width: 220px; position: sticky; left: 0; background: var(--panel); }
+    th { background: linear-gradient(180deg, #f7fbff 0%, #f1f7ff 100%); color: #27446d; }
+    tbody tr:hover td { background: #f8fbff; }
+    tbody tr:hover td:first-child { background: #f4f9ff; }
+    .sec { color: #12396b; font-weight: 700; }
+    .note { color: var(--muted); font-size: 12px; padding: 0 12px 12px; }
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
+      .controls { position: relative; top: 0; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <aside class="card controls">
+      <h1>Simple Model UI</h1>
+      <p class="sub">Scenario + key assumptions. Currency: INR bn.</p>
+
+      <div class="group">
+        <label for="scenario">Scenario</label>
+        <select id="scenario">
+          <option value="Base">Base</option>
+          <option value="Bull">Bull</option>
+          <option value="Bear">Bear</option>
+        </select>
+      </div>
+
+      <div class="grid">
+        <div class="group">
+          <label for="taxRate">Tax Rate</label>
+          <input id="taxRate" type="number" step="0.001" value="0.25" />
+        </div>
+        <div class="group">
+          <label for="intRate">Interest Rate</label>
+          <input id="intRate" type="number" step="0.001" value="0.095" />
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="group">
+          <label for="arDays">AR Days</label>
+          <input id="arDays" type="number" step="1" value="50" />
+        </div>
+        <div class="group">
+          <label for="invDays">Inv Days</label>
+          <input id="invDays" type="number" step="1" value="47" />
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="group">
+          <label for="apDays">AP Days</label>
+          <input id="apDays" type="number" step="1" value="42" />
+        </div>
+        <div class="group">
+          <label for="minCash">Min Cash % Rev</label>
+          <input id="minCash" type="number" step="0.001" value="0.03" />
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="recalcBtn">Recalculate</button>
+        <button class="secondary" id="resetBtn">Reset</button>
+      </div>
+      <p class="sub" style="margin-top:10px">Reads the same logic as the Excel model: scenario-driven growth/margin/capex with linked IS/BS/CFS.</p>
+    </aside>
+
+    <main class="main">
+      <section class="kpis">
+        <div class="card kpi"><div class="t">FY2030 Revenue</div><div class="v" id="kRev">-</div></div>
+        <div class="card kpi"><div class="t">FY2030 EBITDA Margin</div><div class="v" id="kMargin">-</div></div>
+        <div class="card kpi"><div class="t">FY2030 ROE</div><div class="v" id="kRoe">-</div></div>
+        <div class="card kpi"><div class="t">FY2030 Net Debt / EBITDA</div><div class="v" id="kNd">-</div></div>
+        <div class="card kpi"><div class="t">FY2030 Balance Check</div><div class="v" id="kBal">-</div></div>
+      </section>
+
+      <section class="card tbl-wrap">
+        <table id="modelTable"></table>
+        <p class="note">Balance Check = Total Assets - (Total Liabilities + Equity). Target is near 0.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const years = ["FY2026E","FY2027E","FY2028E","FY2029E","FY2030E"];
+    const scenarios = {
+      Base: { growth:[0.09,0.085,0.08,0.075,0.07], margin:[0.27,0.272,0.275,0.277,0.28], capex:[0.11,0.108,0.105,0.102,0.10] },
+      Bull: { growth:[0.12,0.11,0.10,0.095,0.09], margin:[0.29,0.292,0.295,0.297,0.30], capex:[0.125,0.122,0.12,0.118,0.115] },
+      Bear: { growth:[0.05,0.045,0.04,0.04,0.035], margin:[0.24,0.238,0.235,0.233,0.23], capex:[0.09,0.088,0.085,0.082,0.08] }
+    };
+
+    const hist = {
+      revenue: 1071174,
+      ppe: 683102,
+      debt: 347530,
+      equity: 1009626,
+      cash: 106502,
+      ar: 42121,
+      inv: 146062,
+      ap: 186789,
+      otherAssetsPct: 0.907,
+      otherLiabPct: 0.379,
+      opexPct: [0.065,0.064,0.063,0.062,0.061],
+      depPct: [0.09,0.09,0.09,0.09,0.09]
+    };
+
+    function val(id){ return Number(document.getElementById(id).value); }
+    function fmt(x){ return x.toLocaleString(undefined,{maximumFractionDigits:0}); }
+    function pct(x){ return (x*100).toFixed(1) + "%"; }
+
+    function runModel(){
+      const s = document.getElementById("scenario").value;
+      const cfg = scenarios[s];
+      const tax = val("taxRate");
+      const intRate = val("intRate");
+      const arDays = val("arDays");
+      const invDays = val("invDays");
+      const apDays = val("apDays");
+      const minCashPct = val("minCash");
+
+      const out = [];
+      let prevRevenue = hist.revenue;
+      let prevPPE = hist.ppe;
+      let prevDebt = hist.debt;
+      let prevEquity = hist.equity;
+      let prevCash = hist.cash;
+      let prevNWC = hist.ar + hist.inv - hist.ap;
+
+      for(let i=0;i<5;i++){
+        const revenue = prevRevenue * (1 + cfg.growth[i]);
+        const ebitda = revenue * cfg.margin[i];
+        const opex = revenue * hist.opexPct[i];
+        const cogs = revenue - opex - ebitda;
+        const grossProfit = revenue - cogs;
+
+        const dep = prevPPE * hist.depPct[i];
+        const ebit = ebitda - dep;
+        const interest = prevDebt * intRate;
+        const ebt = ebit - interest;
+        const taxAmt = Math.max(0, ebt * tax);
+        const netIncome = ebt - taxAmt;
+
+        const ar = revenue * arDays / 365;
+        const inv = cogs * invDays / 365;
+        const ap = cogs * apDays / 365;
+        const nwc = ar + inv - ap;
+        const dNwc = nwc - prevNWC;
+
+        const cfo = netIncome + dep - dNwc;
+        const capex = revenue * cfg.capex[i];
+        const cfi = -capex;
+
+        const preFinancingCash = prevCash + cfo + cfi;
+        const minCash = revenue * minCashPct;
+        const debtChange = Math.max(0, minCash - preFinancingCash) - Math.min(prevDebt, Math.max(0, preFinancingCash - minCash));
+        const debt = prevDebt + debtChange;
+
+        const netChangeCash = cfo + cfi + debtChange;
+        const cash = prevCash + netChangeCash;
+
+        const ppe = prevPPE + capex - dep;
+        const equity = prevEquity + netIncome;
+        const otherAssets = revenue * hist.otherAssetsPct;
+        const otherLiab = revenue * hist.otherLiabPct;
+
+        const totalAssets = cash + ar + inv + ppe + otherAssets;
+        const totalLiabEq = ap + debt + equity + otherLiab;
+        const balanceCheck = totalAssets - totalLiabEq;
+
+        const roe = netIncome / ((prevEquity + equity) / 2);
+        const roceDen = ((prevDebt + prevEquity - prevCash) + (debt + equity - cash)) / 2;
+        const roce = (ebit * (1-tax)) / roceDen;
+        const ndToEbitda = (debt - cash) / ebitda;
+        const fcf = cfo - capex;
+
+        out.push({
+          revenue,cogs,grossProfit,opex,ebitda,dep,ebit,interest,taxAmt,netIncome,
+          cash,ar,inv,ppe,totalAssets,ap,debt,equity,totalLiabEq,balanceCheck,
+          cfo,capex,debtChange,netChangeCash,
+          roe,roce,ndToEbitda,fcf
+        });
+
+        prevRevenue = revenue;
+        prevPPE = ppe;
+        prevDebt = debt;
+        prevEquity = equity;
+        prevCash = cash;
+        prevNWC = nwc;
+      }
+
+      render(out);
+    }
+
+    function render(out){
+      const table = document.getElementById("modelTable");
+      const rows = [
+        ["Income Statement","sec"],
+        ["Revenue","revenue"],
+        ["COGS","cogs"],
+        ["Gross Profit","grossProfit"],
+        ["Operating Expenses","opex"],
+        ["EBITDA","ebitda"],
+        ["Depreciation","dep"],
+        ["EBIT","ebit"],
+        ["Interest","interest"],
+        ["Tax","taxAmt"],
+        ["Net Income","netIncome"],
+        ["Balance Sheet","sec"],
+        ["Cash","cash"],
+        ["Accounts Receivable","ar"],
+        ["Inventory","inv"],
+        ["PPE","ppe"],
+        ["Total Assets","totalAssets"],
+        ["Accounts Payable","ap"],
+        ["Debt","debt"],
+        ["Equity","equity"],
+        ["Total Liabilities + Equity","totalLiabEq"],
+        ["Balance Check","balanceCheck"],
+        ["Cash Flow","sec"],
+        ["Cash from Operations","cfo"],
+        ["Capex","capex"],
+        ["Debt Issued / (Repaid)","debtChange"],
+        ["Net Change in Cash","netChangeCash"],
+        ["Ratios","sec"],
+        ["ROE","roe_pct"],
+        ["ROCE","roce_pct"],
+        ["Net Debt / EBITDA","ndToEbitda_x"],
+        ["Free Cash Flow","fcf"]
+      ];
+
+      let html = "<thead><tr><th>Line Item</th>" + years.map(y=>`<th>${y}</th>`).join("") + "</tr></thead><tbody>";
+      rows.forEach(([label,key])=>{
+        if(key === "sec"){
+          html += `<tr><td class=\"sec\">${label}</td>${years.map(()=>"<td></td>").join("")}</tr>`;
+        } else {
+          html += `<tr><td>${label}</td>`;
+          out.forEach(y=>{
+            let v = "";
+            if(key.endsWith("_pct")) v = pct(y[key.replace("_pct","")]);
+            else if(key.endsWith("_x")) v = y[key.replace("_x","")].toFixed(2) + "x";
+            else v = fmt(y[key]);
+            html += `<td>${v}</td>`;
+          });
+          html += "</tr>";
+        }
+      });
+      html += "</tbody>";
+      table.innerHTML = html;
+
+      const last = out[out.length-1];
+      document.getElementById("kRev").textContent = fmt(last.revenue);
+      document.getElementById("kMargin").textContent = pct(last.ebitda/last.revenue);
+      document.getElementById("kRoe").textContent = pct(last.roe);
+      document.getElementById("kNd").textContent = last.ndToEbitda.toFixed(2) + "x";
+      document.getElementById("kBal").textContent = fmt(last.balanceCheck);
+      document.getElementById("kBal").className = "v " + (Math.abs(last.balanceCheck) < 1 ? "good" : "bad");
+    }
+
+    document.getElementById("recalcBtn").addEventListener("click", runModel);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("scenario").value = "Base";
+      document.getElementById("taxRate").value = "0.25";
+      document.getElementById("intRate").value = "0.095";
+      document.getElementById("arDays").value = "50";
+      document.getElementById("invDays").value = "47";
+      document.getElementById("apDays").value = "42";
+      document.getElementById("minCash").value = "0.03";
+      runModel();
+    });
+
+    runModel();
+  </script>
+</body>
+</html>
