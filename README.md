@@ -52,20 +52,6 @@ python3 create_three_statement_model.py
 
 No external Python dependencies are required.
 
-## Simple UI
-
-Open the UI directly in a browser:
-
-```bash
-open /Users/dishawagle/Desktop/three\ statement\ model/index.html
-```
-
-UI includes:
-- Scenario switch (Base/Bull/Bear)
-- Core drivers: tax, interest, working capital days, minimum cash
-- 5-year integrated statement preview with balance check
-- KPI cards for FY2030E output metrics
-
 ## Historical data source notes
 
 - FY2025 and FY2024 consolidated line items: RIL Annual Report 2024-25 (Consolidated Financial Statements).
