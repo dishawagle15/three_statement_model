@@ -1,68 +1,57 @@
-# Three Statement Financial Model (Excel)
+Three-Statement Financial Model (Web Application)
+Overview
 
-This project generates a fully linked 3-statement financial model workbook for a publicly listed company profile in INR bn.
-Current prefill: Reliance Industries Limited (consolidated) historicals for FY2023-FY2025.
+This project is an interactive three-statement financial forecasting model built as a web application and deployed on Vercel.
 
-## Output
+It dynamically links:
 
-- `three_statement_model.xlsx`
-- `index.html` (simple browser UI)
+Income Statement
 
-## Included sheets
+Balance Sheet
 
-1. `Control Panel`
-- Scenario selector: Base / Bull / Bear
-- Linked control assumptions for FY2026E: revenue growth, EBITDA margin, capex %, AR/Inventory/AP days, tax rate, interest rate, minimum cash
-- Balance check monitor
+Cash Flow Statement
 
-2. `Historical Financials` (3 years)
-- Income statement: Revenue, COGS, Gross Profit, Operating Expenses, EBITDA, Depreciation, EBIT, Interest, Tax, Net Income
-- Balance sheet items: Cash, AR, Inventory, PPE, AP, Debt, Equity
+All statements are fully integrated and automatically balance based on user-defined assumptions.
 
-3. `Assumptions`
-- Scenario tables (5-year) for revenue growth, EBITDA margin, and capex %
-- Global assumptions (5-year) for WC days, tax, interest, min cash, depreciation %, and OpEx %
+Objective
 
-4. `Working Capital Schedule`
-- AR / Inventory / AP roll-forward and change in NWC
+To build a structured financial forecasting engine that:
 
-5. `PPE Schedule`
-- Opening PPE, capex, depreciation, closing PPE
+Projects multi-year financial performance
 
-6. `Debt Schedule`
-- Opening debt, interest expense, debt draw/(repay), closing debt
-- Debt mechanism keeps cash above minimum cash target
+Links operational assumptions to financial outputs
 
-7. `Projection Model` (5-year forecast)
-- Integrated Income Statement, Balance Sheet, and Cash Flow Statement
-- Fully linked formulas and balance check (`Assets - Liabilities - Equity`)
+Models working capital and capital structure
 
-8. `Ratio Dashboard`
-- EBITDA margin
-- ROE
-- ROCE
-- Net Debt / EBITDA
-- Free Cash Flow
+Ensures balance sheet integrity
 
-9. `DCF Valuation`
-- 5-year FCF build from projected statements
-- WACC and terminal growth inputs
-- Enterprise value, equity value, implied price per share
+The model mirrors institutional financial modeling practices used in investment banking, equity research, and corporate finance.
 
-Control panel also includes:
-- 2D sensitivity table (`Revenue Growth delta` vs `EBITDA Margin delta`)
-- Output metric: stressed FY2030 Net Debt / EBITDA
+Model Structure
 
-## How to run
+Income Statement
+Revenue-driven forecast including COGS, operating expenses, EBITDA, EBIT, interest, tax, and net income.
 
-```bash
-python3 create_three_statement_model.py
-```
+Working Capital
+AR days, inventory days, and AP days dynamically impact cash flow and balance sheet accounts.
 
-No external Python dependencies are required.
+Capital Structure
+Debt evolution, interest calculation, net debt/EBITDA, and minimum cash assumptions.
 
-## Historical data source notes
+Cash Flow Integration
+Net income flows through depreciation, working capital changes, capex, and financing adjustments.
+Balance sheet reconciliation is enforced through a built-in balance check.
 
-- FY2025 and FY2024 consolidated line items: RIL Annual Report 2024-25 (Consolidated Financial Statements).
-- FY2024 and FY2023 comparative line items: RIL media release (Audited financial results for quarter/year ended March 31, 2024).
-- EBITDA in the historical sheet is a model-defined operational EBITDA (`Revenue - COGS - Operating Expenses`) using reported component lines.
+Key Outputs
+
+Multi-year revenue forecast
+
+EBITDA margin
+
+ROE
+
+Net Debt / EBITDA
+
+Cash position
+
+Balance sheet validation
