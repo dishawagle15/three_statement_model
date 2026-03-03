@@ -142,6 +142,7 @@
       <div class="btns">
         <button id="recalcBtn">Recalculate</button>
         <button class="secondary" id="resetBtn">Reset</button>
+        <button class="secondary" id="downloadBtn">Download Excel</button>
       </div>
       <p class="sub" style="margin-top:10px">Reads the same logic as the Excel model: scenario-driven growth/margin/capex with linked IS/BS/CFS.</p>
     </aside>
@@ -190,6 +191,8 @@
     function val(id){ return Number(document.getElementById(id).value); }
     function fmt(x){ return x.toLocaleString(undefined,{maximumFractionDigits:0}); }
     function pct(x){ return (x*100).toFixed(1) + "%"; }
+
+    let latestModelOutput = [];
 
     function runModel(){
       const s = document.getElementById("scenario").value;
@@ -300,7 +303,109 @@
         prevNWC = nwc;
       }
 
+      latestModelOutput = out;
       render(out);
+    }
+
+    function xmlEscape(v){
+      return String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function buildSheetXML(name, rows){
+      let xml = `<Worksheet ss:Name="${xmlEscape(name)}"><Table>`;
+      rows.forEach((row) => {
+        xml += "<Row>";
+        row.forEach((cell, idx) => {
+          const isNum = typeof cell === "number" && Number.isFinite(cell);
+          const type = isNum ? "Number" : "String";
+          const value = isNum ? cell : xmlEscape(cell);
+          const style = idx === 0 ? ' ss:StyleID="sHeaderCell"' : ' ss:StyleID="sNumCell"';
+          xml += `<Cell${style}><Data ss:Type="${type}">${value}</Data></Cell>`;
+        });
+        xml += "</Row>";
+      });
+      xml += "</Table></Worksheet>";
+      return xml;
+    }
+
+    function downloadExcel(){
+      if(!latestModelOutput.length){
+        runModel();
+      }
+      const out = latestModelOutput;
+
+      const isRows = [
+        ["Line Item", ...years],
+        ["Revenue", ...out.map(y => y.revenue)],
+        ["COGS", ...out.map(y => y.cogs)],
+        ["Gross Profit", ...out.map(y => y.grossProfit)],
+        ["Operating Expenses", ...out.map(y => y.opex)],
+        ["EBITDA", ...out.map(y => y.ebitda)],
+        ["Depreciation", ...out.map(y => y.dep)],
+        ["EBIT", ...out.map(y => y.ebit)],
+        ["Interest", ...out.map(y => y.interest)],
+        ["Tax", ...out.map(y => y.taxAmt)],
+        ["Net Income", ...out.map(y => y.netIncome)]
+      ];
+
+      const bsRows = [
+        ["Line Item", ...years],
+        ["Cash", ...out.map(y => y.cash)],
+        ["Accounts Receivable", ...out.map(y => y.ar)],
+        ["Inventory", ...out.map(y => y.inv)],
+        ["PPE", ...out.map(y => y.ppe)],
+        ["Total Assets", ...out.map(y => y.totalAssets)],
+        ["Accounts Payable", ...out.map(y => y.ap)],
+        ["Debt", ...out.map(y => y.debt)],
+        ["Equity", ...out.map(y => y.equity)],
+        ["Total Liabilities + Equity", ...out.map(y => y.totalLiabEq)],
+        ["Balance Check", ...out.map(y => y.balanceCheck)]
+      ];
+
+      const cfRows = [
+        ["Line Item", ...years],
+        ["Net Income", ...out.map(y => y.netIncome)],
+        ["Add: Depreciation", ...out.map(y => y.dep)],
+        ["Less: Change in NWC", ...out.map(y => -(y.cfo - y.netIncome - y.dep))],
+        ["Cash from Operations", ...out.map(y => y.cfo)],
+        ["Capex", ...out.map(y => -y.capex)],
+        ["Cash from Investing", ...out.map(y => -y.capex)],
+        ["Dividends", ...out.map(y => -y.dividends)],
+        ["Debt Issued / (Repaid)", ...out.map(y => y.debtChange)],
+        ["Cash from Financing", ...out.map(y => y.cff)],
+        ["Net Change in Cash", ...out.map(y => y.netChangeCash)]
+      ];
+
+      const workbookXML =
+        `<?xml version="1.0"?>` +
+        `<?mso-application progid="Excel.Sheet"?>` +
+        `<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"` +
+        ` xmlns:o="urn:schemas-microsoft-com:office:office"` +
+        ` xmlns:x="urn:schemas-microsoft-com:office:excel"` +
+        ` xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">` +
+        `<Styles>` +
+        `<Style ss:ID="sHeaderCell"><Font ss:Bold="1"/><Interior ss:Color="#DDE9FF" ss:Pattern="Solid"/></Style>` +
+        `<Style ss:ID="sNumCell"><NumberFormat ss:Format="#,##0"/></Style>` +
+        `</Styles>` +
+        buildSheetXML("Income Statement", isRows) +
+        buildSheetXML("Balance Sheet", bsRows) +
+        buildSheetXML("Cash Flow", cfRows) +
+        `</Workbook>`;
+
+      const blob = new Blob([workbookXML], { type: "application/vnd.ms-excel" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "three_statement_forecast.xls";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
 
     function render(out){
@@ -369,6 +474,7 @@
     }
 
     document.getElementById("recalcBtn").addEventListener("click", runModel);
+    document.getElementById("downloadBtn").addEventListener("click", downloadExcel);
     document.getElementById("resetBtn").addEventListener("click", () => {
       document.getElementById("scenario").value = "Base";
       document.getElementById("taxRate").value = "0.25";
